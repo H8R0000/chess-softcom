@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Environments
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+env.bak/
+
+# Django
+db.sqlite3
+*.sqlite3
+*.sqlite
+*.log
+
+# Django migration history (if you want to ignore auto-created migration files, remove comment)
+# ladder/migrations/*.py
+# !ladder/migrations/__init__.py
+
+# Secret settings
+*.env
+.env.*
+
+# IDEs
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Test/coverage
+.coverage
+.tox/
+htmlcov/
+*.coverage
+.cache/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.orig
+
+# Static/media (if you later add collected files)
+staticfiles/
+static/
+media/
+
+# Misc
+*.bak
+*.swp
+*.tmp

@@ -1,0 +1,26 @@
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Добавить игрока</title>
+    <meta charset="utf-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-6 text-gray-800 text-center">Добавить нового игрока</h1>
+    <form method="post" class="space-y-6">
+      {% csrf_token %}
+      <div>
+        {{ form.name.label_tag }}
+        {{ form.name|add_class:"mt-1 block w-full border-gray-300 rounded-xl shadow-sm focus:ring-blue-500 focus:border-blue-500" }}
+        {% if form.name.errors %}
+          <div class="text-red-500 text-sm mt-1">{{ form.name.errors.0 }}</div>
+        {% endif %}
+      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 font-semibold shadow">Добавить</button>
+    </form>
+    <a href="{% url 'ladder' %}" class="block mt-6 text-blue-700 underline text-center">Назад к рейтингу</a>
+  </div>
+</body>
+</html>
