@@ -50,10 +50,6 @@ nosetests.xml
 coverage.xml
 *.orig
 
-# Static/media (if you later add collected files)
-staticfiles/
-static/
-media/
 
 # Misc
 *.bak
