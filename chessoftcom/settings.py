@@ -5,8 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "fake-key-for-dev")
-DEBUG = False
-
+DEBUG = os.environ.get("DJANGO_DEBUG", "False").strip().lower() in ("1", "true", "yes", "on")
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(',')
 
 
