@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="theme-color" content="#e9edf3" />
   <title>{{ page_title|default:"Шахматные часы" }}</title>
-  <link rel="stylesheet" href="{% static '/css/clock.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/clock.css' %}" />
 </head>
 <body>
   <div class="app">
@@ -148,6 +148,6 @@
 
   <div hidden id="csrfTokenHolder">{% csrf_token %}</div>
   {{ clock_config|json_script:"clock-config" }}
-  <script type="module" src="{% static '/js/clock-page.js' %}"></script>
+  <script type="module" src="{% static 'js/clock-page.js' %}"></script>
 </body>
 </html>
