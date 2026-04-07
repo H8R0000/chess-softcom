@@ -1,7 +1,9 @@
 # ladder/views.py
-from django.shortcuts import render
 from django.shortcuts import render, redirect
 from django import forms
+from django.http import JsonResponse
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 from .models import Player, Game
 from django.db.models import Q
 
@@ -109,6 +111,21 @@ def determine_game_type(time_control):
     else:
         return 'classical'
 
+
+def create_game_record(white, black, result, time_control):
+    game_type = determine_game_type(time_control)
+    game = Game(
+        white=white,
+        black=black,
+        result=result,
+        white_elo_before=white.elo,
+        black_elo_before=black.elo,
+        time_control=time_control,
+        game_type=game_type,
+    )
+    game.save()
+    return game
+
 def add_game(request):
     if request.method == 'POST':
         form = GameForm(request.POST)
@@ -117,17 +134,7 @@ def add_game(request):
             black = form.cleaned_data['black']
             result = form.cleaned_data['result']
             time_control = form.cleaned_data['time_control']
-            game_type = determine_game_type(time_control)
-            game = Game(
-                white=white,
-                black=black,
-                result=result,
-                white_elo_before=white.elo,
-                black_elo_before=black.elo,
-                time_control=time_control,
-                game_type=game_type,
-            )
-            game.save()
+            create_game_record(white, black, result, time_control)
             return redirect('ladder')
     else:
         form = GameForm()
@@ -147,3 +154,94 @@ def add_player(request):
     else:
         form = PlayerForm()
     return render(request, 'ladder/add_player.html', {'form': form})
+
+
+@require_POST
+def save_clock_result(request):
+    top_player_id = request.POST.get("top_player_id")
+    bottom_player_id = request.POST.get("bottom_player_id")
+    winner = request.POST.get("winner")
+    minutes_raw = request.POST.get("minutes")
+
+    if not top_player_id or not bottom_player_id:
+        return JsonResponse({"error": "Выберите обоих игроков."}, status=400)
+
+    if top_player_id == bottom_player_id:
+        return JsonResponse({"error": "Игроки должны быть разными."}, status=400)
+
+    if winner not in {"top", "bottom", "draw"}:
+        return JsonResponse({"error": "Выберите результат партии."}, status=400)
+
+    try:
+        top_player_id = int(top_player_id)
+        bottom_player_id = int(bottom_player_id)
+        time_control = int(minutes_raw)
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "Некорректные данные партии."}, status=400)
+
+    if time_control < 1 or time_control > 180:
+        return JsonResponse({"error": "Контроль времени вне допустимого диапазона."}, status=400)
+
+    players = Player.objects.in_bulk([top_player_id, bottom_player_id])
+    white = players.get(top_player_id)
+    black = players.get(bottom_player_id)
+
+    if white is None or black is None:
+        return JsonResponse({"error": "Не удалось найти выбранных игроков."}, status=404)
+
+    result_map = {
+        "top": "1-0",
+        "bottom": "0-1",
+        "draw": Game.RESULT_CHOICES[2][0],
+    }
+    game = create_game_record(white, black, result_map[winner], time_control)
+
+    return JsonResponse({
+        "ok": True,
+        "gameId": game.id,
+        "message": f"Результат сохранен: {white.name} vs {black.name}.",
+    })
+
+
+def clock(request):
+    players = Player.objects.order_by("name")
+
+    initial_minutes = 7
+    initial_increment = 5
+    top_player_id = request.GET.get("top_player_id") or ""
+    bottom_player_id = request.GET.get("bottom_player_id") or ""
+
+    top_player_name = None
+    bottom_player_name = None
+
+    if top_player_id:
+        top_player = players.filter(id=top_player_id).first()
+        if top_player is not None:
+            top_player_name = top_player.name
+
+    if bottom_player_id:
+        bottom_player = players.filter(id=bottom_player_id).first()
+        if bottom_player is not None:
+            bottom_player_name = bottom_player.name
+
+    clock_config = {
+        "initialMinutes": initial_minutes,
+        "initialIncrement": initial_increment,
+        "topPlayerId": top_player_id,
+        "bottomPlayerId": bottom_player_id,
+        "topPlayerName": top_player_name,
+        "bottomPlayerName": bottom_player_name,
+        "saveResultUrl": reverse("save_clock_result"),
+    }
+
+    context = {
+        "page_title": "Шахматные часы",
+        "players": players,
+        "initial_minutes": initial_minutes,
+        "initial_increment": initial_increment,
+        "top_player_name": top_player_name,
+        "bottom_player_name": bottom_player_name,
+        "clock_config": clock_config,
+    }
+
+    return render(request, "clock/clock.html", context)

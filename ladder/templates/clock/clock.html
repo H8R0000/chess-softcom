@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="{% static 'favicon.ico' %}">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#e9edf3" />
+  <title>{{ page_title|default:"Шахматные часы" }}</title>
+  <link rel="stylesheet" href="{% static 'css/clock.css' %}" />
+</head>
+<body>
+  <div class="app">
+    <main class="clock-shell" id="clockShell">
+      <section class="settings-panel" id="settingsPanel" aria-label="Настройки часов">
+        <div class="settings-top">
+          <h1 class="settings-title">Шахматные часы</h1>
+          <button class="btn btn--light" id="closeSettingsBtn" type="button">Закрыть</button>
+        </div>
+
+        <div class="settings-grid">
+          <div class="field">
+            <label for="topPlayerSelect">Игрок сверху</label>
+            <select class="input" id="topPlayerSelect" name="top_player_id">
+              <option value="">Выбрать игрока</option>
+              {% for player in players %}
+                <option value="{{ player.id }}">{{ player.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="bottomPlayerSelect">Игрок снизу</label>
+            <select class="input" id="bottomPlayerSelect" name="bottom_player_id">
+              <option value="">Выбрать игрока</option>
+              {% for player in players %}
+                <option value="{{ player.id }}">{{ player.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="minutes">Минуты</label>
+            <input
+              class="input"
+              id="minutes"
+              name="minutes"
+              type="number"
+              value="{{ initial_minutes|default:7 }}"
+              min="1"
+              max="180"
+              step="1"
+              inputmode="numeric"
+            />
+          </div>
+
+          <div class="field">
+            <label for="increment">Добавка, сек</label>
+            <input
+              class="input"
+              id="increment"
+              name="increment"
+              type="number"
+              value="{{ initial_increment|default:5 }}"
+              min="0"
+              max="60"
+              step="1"
+              inputmode="numeric"
+            />
+          </div>
+        </div>
+
+        <div class="presets" aria-label="Быстрые режимы">
+          <button class="preset" type="button" data-minutes="1" data-increment="0">1+0</button>
+          <button class="preset" type="button" data-minutes="3" data-increment="2">3+2</button>
+          <button class="preset" type="button" data-minutes="7" data-increment="5">7+5</button>
+          <button class="preset" type="button" data-minutes="10" data-increment="0">10+0</button>
+          <button class="preset" type="button" data-minutes="10" data-increment="5">10+5</button>
+        </div>
+
+        <div class="settings-actions">
+          <button class="btn btn--light" id="resetBtn" type="button">Сброс</button>
+          <button class="btn btn--blue" id="applyBtn" type="button">Применить</button>
+        </div>
+      </section>
+      <section class="settings-panel" id="resultPanel" aria-label="Записать результаты">
+        <div class="settings-top">
+          <h1 class="settings-title">Записать результаты</h1>
+          <button class="btn btn--light" id="closeResultBtn" type="button">Закрыть</button>
+        </div>
+
+        <div class="field">
+          <label for="winnerSelect">Кто выиграл</label>
+          <select class="input" id="winnerSelect" name="winner">
+            <option value="top">{{ top_player_name|default:"Игрок сверху" }}</option>
+            <option value="bottom">{{ bottom_player_name|default:"Игрок снизу" }}</option>
+            <option value="draw">Ничья</option>
+          </select>
+        </div>
+
+        <div class="settings-actions">
+          <button class="btn btn--blue" id="saveResultBtn" type="button">Записать результат</button>
+        </div>
+      </section>
+
+      <section class="board" aria-label="Шахматные часы">
+        <article class="player player--top active" id="playerTop" role="button" tabindex="0" aria-label="Верхний игрок">
+          <div class="player__header">
+            <div class="player__meta" id="topMeta">+{{ initial_increment|default:0 }} сек</div>
+            <h2 class="player__name" id="topDisplay">{{ top_player_name|default:"Игрок сверху" }}</h2>
+          </div>
+
+          <p class="time" id="topTime">05:00</p>
+
+          <div class="player__footer">
+            <div class="player__meta" id="topState">Ход</div>
+            <div class="player__meta">Верхний</div>
+          </div>
+        </article>
+
+        <div class="separator">
+          <div class="toolbar">
+            <button class="icon-btn" id="settingsBtn" type="button" aria-label="Настройки">☰</button>
+            <button class="icon-btn" id="resultBtn" type="button" aria-label="Результат">Результат</button>
+            <button class="icon-btn" id="pauseBtn" type="button" aria-label="Пауза">⏸</button>
+            <button class="icon-btn" id="fullscreenBtn" type="button" aria-label="Полный экран">⤢</button>
+          </div>
+        </div>
+
+        <article class="player" id="playerBottom" role="button" tabindex="0" aria-label="Нижний игрок">
+          <div class="player__header">
+            <div class="player__meta">Нижний</div>
+            <h2 class="player__name" id="bottomDisplay">{{ bottom_player_name|default:"Игрок снизу" }}</h2>
+          </div>
+
+          <p class="time" id="bottomTime">05:00</p>
+
+          <div class="player__footer">
+            <div class="player__meta" id="bottomState">Ожидание</div>
+            <div class="player__meta" id="bottomMeta">+{{ initial_increment|default:0 }} сек</div>
+          </div>
+        </article>
+      </section>
+
+      <div class="status-pill" id="statusText">Готово к старту</div>
+    </main>
+  </div>
+
+  <div hidden id="csrfTokenHolder">{% csrf_token %}</div>
+  {{ clock_config|json_script:"clock-config" }}
+  <script type="module" src="{% static 'js/clock-page.js' %}"></script>
+</body>
+</html>

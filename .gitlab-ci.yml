@@ -1,0 +1,38 @@
+stages:
+  - deploy
+
+default:
+  tags:
+    - Linux
+
+build-docker:
+  stage: deploy
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.1-debug
+    entrypoint: [""]
+  interruptible: true
+  rules:
+      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - /kaniko/executor -c "$CI_PROJECT_DIR" -f "Dockerfile" -d "$CI_REGISTRY_IMAGE"
+
+deploy:
+  stage: deploy
+  image: alpine
+  interruptible: false
+  rules:
+      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  needs:
+    - build-docker
+  before_script:
+    - apk update
+    - apk add openssh-client
+    - chmod og= $DEPLOY_RSA
+  script:
+    - ssh -i $DEPLOY_RSA -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER_IP "cd ~; if [ ! -d chess ]; then mkdir chess; fi"
+    - ssh -i $DEPLOY_RSA -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER_IP "cd ~/chess && docker-compose down -v || true"
+    - ssh -i $DEPLOY_RSA -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER_IP "cd ~/chess && rm docker-compose.yml || true"
+    - scp -i $DEPLOY_RSA docker-compose.yml $DEPLOY_USER@$DEPLOY_SERVER_IP:~/chess
+    - ssh -i $DEPLOY_RSA -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER_IP "cd ~/chess && echo \"DJANGO_SECRET_KEY=SECRET_KEY = '$SECRET_KEY'\" > chess.env"
+    - ssh -i $DEPLOY_RSA -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER_IP "cd ~/chess && docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} $CI_REGISTRY"
+    - ssh -i $DEPLOY_RSA -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER_IP "cd ~/chess && docker-compose up -d"

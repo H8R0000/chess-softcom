@@ -1,0 +1,16 @@
+services:
+  chess:
+    container_name: chess
+    image: gitlab.softcom.su:5050/ignat.sergeev/chess:latest
+    ports:
+      - 80:8000
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DJANGO_DB_NAME=db.sqlite3
+      - DJANGO_DB_PATH=data
+      - DJANGO_ALLOWED_HOSTS=chess.softcom.su
+    env_file:
+      - chess.env
+    restart: unless-stopped
+
